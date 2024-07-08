@@ -1,0 +1,59 @@
+import spacy
+from transformers import pipeline
+
+# Load SpaCy model for NER
+nlp = spacy.load('en_core_web_sm')
+
+# Load BERT-based summarization pipeline
+summarizer = pipeline("summarization")
+
+# Function to preprocess the legal document
+def preprocess_document(text):
+    # Replace newlines and perform other necessary preprocessing steps
+    text = text.replace('\n', ' ')
+    return text
+
+# Function to extract entities (PERSON, ORG, DATE) from the document
+def extract_entities(doc):
+    entities = [ent.text for ent in doc.ents if ent.label_ in ['PERSON', 'ORG', 'DATE']]
+    return entities
+
+# Function to extract clauses containing specific keywords
+def extract_clauses(doc, keyword):
+    clauses = [sent.text for sent in doc.sents if keyword in sent.text.lower()]
+    return clauses
+
+# Function to process a legal document: extract entities, clauses, and generate summary
+def process_legal_document(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        document_text = file.read()
+
+    # Preprocess document
+    preprocessed_text = preprocess_document(document_text)
+
+    # Tokenize document with SpaCy
+    doc = nlp(preprocessed_text)
+
+    # Extract entities (PERSON, ORG, DATE)
+    entities = extract_entities(doc)
+
+    # Extract clauses with keyword 'obligation'
+    clauses = extract_clauses(doc, 'obligation')
+
+    # Summarize document using BERT-based summarizer
+    summary = summarizer(preprocessed_text, max_length=150, min_length=30, do_sample=False)
+
+    return entities, clauses, summary[0]['summary_text']
+
+# Example usage
+if __name__ == "__main__":
+    file_path = 'legal_document.txt'  # Replace with your legal document file path
+    entities, clauses, summary = process_legal_document(file_path)
+
+    print("Entities:", entities)
+    print("\nClauses:")
+    for clause in clauses:
+        print("-", clause)
+
+    print("\nSummarized Document:")
+    print(summary)
